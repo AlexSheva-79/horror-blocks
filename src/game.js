@@ -11,11 +11,13 @@
     const r = (window.innerHeight || 1920) / (window.innerWidth || 1080);
     return Math.round(Math.min(2400, Math.max(H, W * r)));
   })();
-  const OY = (VH - H) / 2;            // сдвиг камеры по высоте
+  const OY = (VH - H) / 2;            // сдвиг окон меню, чтобы они были по центру
   const COLS = 10, ROWS = 20;         // поле 10×20
-  const CELL = 66;                    // размер клетки на экране
-  const FX = (W - COLS * CELL) / 2;   // левый край поля (210)
-  const FY = 280;                     // верхний край поля
+  const TOP = 150;                    // полоска сверху: очки, уровень, «далее», пауза
+  // Клетка как можно крупнее: поле во всю ширину или во всю высоту под полоской
+  const CELL = Math.floor(Math.min(W / COLS, (VH - TOP - 8) / ROWS));
+  const FX = Math.round((W - COLS * CELL) / 2);   // левый край поля
+  const FY = TOP + 4;                             // верхний край поля
   const FW = COLS * CELL, FH = ROWS * CELL;
   const TEX = 128;                    // размер клетки в картинке
 
@@ -108,8 +110,8 @@
       this.drawBackground();
       this.drawField();
       this.drawPanels();
+      this.setupGestures();   // сначала жесты, кнопки поверх них
       this.drawButtons();
-      this.setupGestures();
       this.setupKeyboard();
 
       this.music = this.sound.add('music', { loop: true, volume: 0.45 });
@@ -138,8 +140,7 @@
 
     // ---------- Оформление ----------
     drawBackground() {
-      this.cameras.main.setScroll(0, -OY);
-      const bg = this.add.image(W / 2, H / 2, 'bg');
+      const bg = this.add.image(W / 2, VH / 2, 'bg');
       const s = Math.max(W / bg.width, VH / bg.height);
       bg.setScale(s);
     }
@@ -168,32 +169,29 @@
     }
 
     drawPanels() {
-      const lx = 14, pw = FX - 28;           // левая панель
-      this.panel(lx, FY, pw, 520);
-      const cx = lx + pw / 2;
-      const label = (y, t) => this.add.text(cx, y, t, { fontFamily: FONT, fontSize: '30px', color: BONE, fontStyle: 'bold' }).setOrigin(0.5);
-      const value = (y) => this.add.text(cx, y, '0', { fontFamily: FONT, fontSize: '50px', color: '#ffffff', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5);
-      label(FY + 50, 'ОЧКИ'); this.scoreText = value(FY + 105);
-      label(FY + 200, 'УРОВЕНЬ'); this.levelText = value(FY + 255);
-      label(FY + 350, 'РЯДЫ'); this.linesText = value(FY + 405);
-
-      const rx = FX + FW + 14;              // правая панель
-      this.panel(rx, FY, pw, 330);
-      this.add.text(rx + pw / 2, FY + 50, 'ДАЛЕЕ', { fontFamily: FONT, fontSize: '30px', color: BONE, fontStyle: 'bold' }).setOrigin(0.5);
-      this.nextBox = { x: rx + pw / 2, y: FY + 195 };
+      const g = this.add.graphics();
+      g.fillStyle(0x0a0204, 0.8).fillRect(0, 0, W, TOP);
+      g.lineStyle(3, 0x7a1418, 0.9).lineBetween(0, TOP, W, TOP);
+      const label = (x, t) => this.add.text(x, 42, t, { fontFamily: FONT, fontSize: '28px', color: BONE, fontStyle: 'bold' }).setOrigin(0.5);
+      const value = (x) => this.add.text(x, 100, '0', { fontFamily: FONT, fontSize: '52px', color: '#ffffff', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5);
+      label(150, 'ОЧКИ'); this.scoreText = value(150);
+      label(390, 'УРОВЕНЬ'); this.levelText = value(390);
+      label(590, 'РЯДЫ'); this.linesText = value(590);
+      label(790, 'ДАЛЕЕ');
+      this.nextBox = { x: 790, y: 102, w: 150, h: 72 };
       this.nextLayer = this.add.container(0, 0);
 
       // Кнопка паузы
-      const px = rx + pw / 2, py = FY + 440;
+      const px = 990, py = TOP / 2;
       const pb = this.add.graphics();
       const drawPause = (down) => {
         pb.clear();
-        pb.fillStyle(down ? 0x4a1015 : 0x1a0608, 0.85).fillCircle(px, py, 62);
-        pb.lineStyle(5, BONE_N, 0.9).strokeCircle(px, py, 62);
-        pb.fillStyle(BONE_N, 1).fillRoundedRect(px - 24, py - 26, 16, 52, 4).fillRoundedRect(px + 8, py - 26, 16, 52, 4);
+        pb.fillStyle(down ? 0x4a1015 : 0x1a0608, 0.85).fillCircle(px, py, 52);
+        pb.lineStyle(5, BONE_N, 0.9).strokeCircle(px, py, 52);
+        pb.fillStyle(BONE_N, 1).fillRoundedRect(px - 20, py - 22, 14, 44, 4).fillRoundedRect(px + 6, py - 22, 14, 44, 4);
       };
       drawPause(false);
-      const hit = this.add.zone(px, py, 140, 140).setInteractive();
+      const hit = this.add.zone(px, py, 150, TOP).setInteractive();
       hit.on('pointerdown', () => { drawPause(true); });
       hit.on('pointerup', () => {
         drawPause(false);
@@ -204,7 +202,7 @@
 
     // ---------- Кнопки управления ----------
     drawButtons() {
-      const y = 1770;
+      const y = VH - 130;  // полупрозрачные кнопки поверх нижней части поля
       const defs = [
         { x: 115, r: 88, icon: 'left', down: () => this.pressDir(-1), up: () => this.releaseDir(-1) },
         { x: 315, r: 88, icon: 'right', down: () => this.pressDir(1), up: () => this.releaseDir(1) },
@@ -217,9 +215,9 @@
         const g = this.add.graphics();
         const draw = (pressed) => {
           g.clear();
-          g.fillStyle(pressed ? 0x5a1218 : 0x1a0608, 0.85).fillCircle(d.x, y, d.r);
-          g.lineStyle(6, BONE_N, 0.9).strokeCircle(d.x, y, d.r);
-          this.drawIcon(g, d.icon, d.x, y, d.r);
+          g.fillStyle(pressed ? 0x8a1a20 : 0x1a0608, pressed ? 0.45 : 0.18).fillCircle(d.x, y, d.r);
+          g.lineStyle(5, BONE_N, pressed ? 0.6 : 0.3).strokeCircle(d.x, y, d.r);
+          this.drawIcon(g, d.icon, d.x, y, d.r, pressed ? 0.7 : 0.35);
         };
         draw(false);
         const zone = this.add.zone(d.x, y, d.r * 2 + 20, d.r * 2 + 40).setInteractive();
@@ -239,9 +237,9 @@
       }
     }
 
-    drawIcon(g, icon, x, y, r) {
-      g.fillStyle(BONE_N, 1);
-      g.lineStyle(14, BONE_N, 1);
+    drawIcon(g, icon, x, y, r, alpha = 1) {
+      g.fillStyle(BONE_N, alpha);
+      g.lineStyle(14, BONE_N, alpha);
       const s = r * 0.42;
       if (icon === 'left') g.fillTriangle(x - s, y, x + s * 0.7, y - s, x + s * 0.7, y + s);
       if (icon === 'right') g.fillTriangle(x + s, y, x - s * 0.7, y - s, x - s * 0.7, y + s);
@@ -263,7 +261,7 @@
 
     // ---------- Жесты на поле ----------
     setupGestures() {
-      const zone = this.add.zone(FX - 60, FY - 40, FW + 120, FH + 60).setOrigin(0).setInteractive();
+      const zone = this.add.zone(0, TOP, W, VH - TOP).setOrigin(0).setInteractive();
       zone.on('pointerdown', (p) => {
         if (this.mode !== 'play') return;
         this.gesture = { id: p.id, x0: p.x, y0: p.y, t0: p.downTime, movedX: 0, movedY: 0, maxDist: 0, lastY: p.y, lastT: p.downTime, vy: 0 };
@@ -561,13 +559,18 @@
       this.nextLayer.removeAll(true);
       const type = this.queue[0];
       const p = PIECES[type];
-      const size = Math.min(150 / p.w, 200 / p.h, 50);
-      const ox = this.nextBox.x - (p.w * size) / 2, oy = this.nextBox.y - (p.h * size) / 2;
-      p.cells.forEach(([x, y]) => {
-        const s = this.add.image(ox + x * size + size / 2, oy + y * size + size / 2, 'm_' + type, y * p.w + x);
-        s.setScale(size / TEX);
-        this.nextLayer.add(s);
-      });
+      const r = p.h > p.w ? 1 : 0;   // высоких монстров кладём на бок, чтобы влезли в полоску
+      const cells = shapeCells(type, r);
+      const minX = Math.min(...cells.map((q) => q.x)), maxX = Math.max(...cells.map((q) => q.x));
+      const minY = Math.min(...cells.map((q) => q.y)), maxY = Math.max(...cells.map((q) => q.y));
+      const cw = maxX - minX + 1, ch = maxY - minY + 1;
+      const b = this.nextBox;
+      const size = Math.min(b.w / cw, b.h / ch, 40);
+      const ox = b.x - (cw * size) / 2, oy = b.y - (ch * size) / 2;
+      for (const q of cells) {
+        const s = this.add.image(ox + (q.x - minX) * size + size / 2, oy + (q.y - minY) * size + size / 2, 'm_' + type, q.frame);
+        this.nextLayer.add(s.setScale(size / TEX).setAngle(r * 90));
+      }
     }
 
     updateHud() {
@@ -629,7 +632,7 @@
     }
 
     overlay() {
-      const c = this.add.container(0, 0).setDepth(100);
+      const c = this.add.container(0, OY).setDepth(100);
       const dim = this.add.rectangle(W / 2, H / 2, W, VH, 0x050102, 0.78).setInteractive(); // блокирует нажатия под окном
       c.add(dim);
       return c;
