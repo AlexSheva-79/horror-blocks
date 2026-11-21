@@ -103,6 +103,7 @@
     create() {
       this.musicOn = store.get('music', true);
       this.soundOn = store.get('sound', true);
+      this.buttonsOn = store.get('buttons', true);
       this.best = store.get('best', 0);
       this.mode = 'menu';
 
@@ -215,9 +216,9 @@
         const g = this.add.graphics();
         const draw = (pressed) => {
           g.clear();
-          g.fillStyle(pressed ? 0x8a1a20 : 0x1a0608, pressed ? 0.45 : 0.18).fillCircle(d.x, y, d.r);
-          g.lineStyle(5, BONE_N, pressed ? 0.6 : 0.3).strokeCircle(d.x, y, d.r);
-          this.drawIcon(g, d.icon, d.x, y, d.r, pressed ? 0.7 : 0.35);
+          g.fillStyle(pressed ? 0x8a1a20 : 0x1a0608, pressed ? 0.35 : 0.07).fillCircle(d.x, y, d.r);
+          g.lineStyle(4, BONE_N, pressed ? 0.5 : 0.16).strokeCircle(d.x, y, d.r);
+          this.drawIcon(g, d.icon, d.x, y, d.r, pressed ? 0.6 : 0.2);
         };
         draw(false);
         const zone = this.add.zone(d.x, y, d.r * 2 + 20, d.r * 2 + 40).setInteractive();
@@ -233,7 +234,16 @@
         };
         zone.on('pointerup', release);
         zone.on('pointerout', release);
-        this.ctrlButtons.push(zone);
+        this.ctrlButtons.push({ g, zone });
+      }
+      this.applyButtons();
+    }
+
+    // Показать или спрятать кнопки управления (настройка в меню)
+    applyButtons() {
+      for (const b of this.ctrlButtons) {
+        b.g.setVisible(this.buttonsOn);
+        if (this.buttonsOn) b.zone.setInteractive(); else b.zone.disableInteractive();
       }
     }
 
@@ -648,6 +658,10 @@
         this.soundOn = !this.soundOn; store.set('sound', this.soundOn);
         t.setText(label(this.soundOn, 'Звуки'));
       }, { size: 42, fill: 0x2a080b });
+      this.makeButton(c, W / 2, y + 130, 400, 110, label(this.buttonsOn, 'Кнопки'), (t) => {
+        this.buttonsOn = !this.buttonsOn; store.set('buttons', this.buttonsOn);
+        t.setText(label(this.buttonsOn, 'Кнопки')); this.applyButtons();
+      }, { size: 42, fill: 0x2a080b });
     }
 
     closeOverlay() { if (this.ui) { this.ui.destroy(); this.ui = null; } }
@@ -688,9 +702,9 @@
 
       this.makeButton(c, W / 2, 1110, 560, 160, 'ИГРАТЬ', () => this.startGame(), { size: 76 });
       this.toggles(c, 1300);
-      c.add(this.add.text(W / 2, 1440, 'Рекорд: ' + this.best, { fontFamily: FONT, fontSize: '46px', color: '#ffd34d', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5));
-      c.add(this.add.text(W / 2, 1560,
-        'Управление: кнопки внизу.\nТап по полю — поворот, свайп в сторону — сдвиг,\nрезкий свайп вниз — бросок.', {
+      c.add(this.add.text(W / 2, 1570, 'Рекорд: ' + this.best, { fontFamily: FONT, fontSize: '46px', color: '#ffd34d', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5));
+      c.add(this.add.text(W / 2, 1690,
+        'Управление: кнопки внизу (их можно выключить).\nТап по полю — поворот, свайп в сторону — сдвиг,\nрезкий свайп вниз — бросок.', {
           fontFamily: FONT, fontSize: '32px', color: '#bfa98a', align: 'center', lineSpacing: 6,
         }).setOrigin(0.5));
       c.add(this.add.text(W / 2, 1870, 'Музыка: «Carnival Grin», alanajordan (Pixabay)', {
