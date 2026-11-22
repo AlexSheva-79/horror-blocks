@@ -108,6 +108,11 @@
       this.mode = 'menu';
 
       this.input.addPointer(3);
+      // В приложении для Android прячем верхнюю строку телефона (часы, батарея)
+      this.isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+      if (this.isNative && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar) {
+        window.Capacitor.Plugins.StatusBar.hide().catch(() => {});
+      }
       this.drawBackground();
       this.drawField();
       this.drawPanels();
@@ -714,7 +719,7 @@
 
     startGame() {
       this.closeOverlay();
-      if (this.sys.game.device.input.touch && !this.scale.isFullscreen) {
+      if (!this.isNative && this.sys.game.device.input.touch && !this.scale.isFullscreen) {
         try { this.scale.startFullscreen(); } catch (e) { /* не страшно */ }
       }
       this.resetBoard();

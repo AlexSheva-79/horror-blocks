@@ -1,0 +1,9 @@
+{
+  "appId": "com.alexsheva.pastbezdny",
+  "appName": "Пасть Бездны",
+  "webDir": "www",
+  "backgroundColor": "#0b0204",
+  "android": {
+    "backgroundColor": "#0b0204"
+  }
+}

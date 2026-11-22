@@ -21,3 +21,9 @@
 - Звуки — Freesound, лицензия CC0: princessemilu, Breviceps, maugusto_sfx, icyjim, dinodilopho, DeVern, finix473.
 - Музыка — «Carnival Grin», alanajordan (Pixabay, лицензия Pixabay).
 - Движок — [Phaser 3](https://phaser.io) (MIT).
+
+## APK для Android
+При каждом обновлении `main` GitHub сам собирает APK (файл `.github/workflows/android.yml`,
+обёртка — Capacitor). Готовый файл: страница Releases → «APK — последняя версия» → `past-bezdny.apk`.
+Подпись тестовая (`android-keystore/debug.keystore`), она годится только для установки на свои телефоны.
+Для Google Play понадобится отдельный секретный ключ.

@@ -1,0 +1,17 @@
+{
+  "name": "horror-blocks",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Пасть Бездны — головоломка с падающими монстрами",
+  "scripts": {
+    "build:web": "node scripts/copy-web.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.2"
+  }
+}
